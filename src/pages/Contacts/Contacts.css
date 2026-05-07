@@ -1,0 +1,122 @@
+.contacts-page {
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* PANEL */
+.crm-panel {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px;
+  height: 100%;
+}
+
+/* HEADER */
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.panel-header h6 {
+  color: #2f8b6d;
+  font-weight: 600;
+}
+
+.arrow {
+  color: #7b8a8b;
+}
+
+/* FORM */
+.form-group {
+  margin-bottom: 14px;
+}
+
+label {
+  font-size: 12px;
+  color: #7b8a8b;
+  margin-bottom: 4px;
+  display: block;
+}
+
+input {
+  width: 100%;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #d9dee3;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+/* SELECT */
+.select-box {
+  position: relative;
+}
+
+.select-box span {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #2f8b6d;
+  font-size: 12px;
+}
+
+/* STATUS */
+.status-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.status-box {
+  flex: 1;
+}
+
+/* TABS */
+.tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 14px;
+}
+
+.tab {
+  padding: 6px 0;
+  font-size: 14px;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.tab.active {
+  color: #2f8b6d;
+  border-bottom: 2px solid #2f8b6d;
+  font-weight: 500;
+}
+
+/* TABLE */
+.events-table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+}
+
+.events-table th {
+  text-align: left;
+  color: #7b8a8b;
+  font-weight: 500;
+  padding-bottom: 10px;
+}
+
+.events-table td {
+  padding: 10px 0;
+  border-top: 1px solid #f1f3f5;
+  color: #374151;
+}
+
+/* RESPONSIVE */
+@media (max-width: 992px) {
+  .status-row {
+    flex-direction: column;
+  }
+}

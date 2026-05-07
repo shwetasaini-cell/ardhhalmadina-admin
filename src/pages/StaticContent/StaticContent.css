@@ -1,0 +1,264 @@
+/* StaticContent.css */
+
+.static-content-page {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: 100vh;
+}
+
+/* Stats Grid / Navigation Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card.active {
+  border: 2px solid #236b52;
+  background: linear-gradient(135deg, #fff 0%, #f0fff4 100%);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.stat-icon.primary {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.stat-icon.success {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.stat-icon.info {
+  background: #e1f5fe;
+  color: #0288d1;
+}
+
+.stat-icon.warning {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.stat-icon.secondary {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.stat-info h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-info p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-left .page-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-icon {
+  color: #236b52;
+  font-size: 28px;
+}
+
+.page-subtitle {
+  margin: 5px 0 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.btn-save {
+  background: #236b52;
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+}
+
+.btn-save:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Editor Wrapper */
+.editor-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 20px;
+  height: 400px;
+}
+
+.editor-container {
+  padding: 20px;
+}
+
+/* CKEditor Customization */
+.ck-editor__editable {
+  min-height: 500px;
+  max-height: 70vh;
+}
+
+.ck.ck-editor__main > .ck-editor__editable:not(.ck-focused) {
+  border-color: #e0e0e0;
+}
+
+.ck.ck-editor__main > .ck-editor__editable.ck-focused {
+  border-color: #4caf50;
+  box-shadow: 0 0 0 1px #4caf50;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #4caf50;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 15px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Info Footer */
+.info-footer {
+  background: #e8f5e9;
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin-top: 20px;
+}
+
+.info-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #2e7d32;
+  font-size: 13px;
+}
+
+.info-icon {
+  font-size: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .static-content-page {
+    padding: 15px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+  }
+
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+
+  .stat-info h3 {
+    font-size: 14px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .btn-save {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ck-editor__editable {
+    min-height: 300px;
+  }
+}

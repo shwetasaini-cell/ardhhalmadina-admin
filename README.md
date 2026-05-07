@@ -1,0 +1,30 @@
+# CRM Admin Panel
+
+A modern, responsive **CRM Admin Panel** built with **Vite + React (JSX)**.  
+The UI is designed to closely match a professional CRM system, including **Login, Dashboard, Contacts, and Leads** pages.
+
+---
+
+## 🚀 Features
+
+- 🔐 Login Page (pixel-close UI)
+- 📊 Modern Dashboard with charts
+- 👥 Contacts Management UI
+- 🧾 Leads Management UI
+- 📱 Fully Responsive (Desktop / Tablet / Mobile)
+- 🧭 Collapsible Sidebar
+- 🔍 Topbar with Search & Actions
+- 🎨 Clean & Professional SaaS Design
+
+---
+
+## 🛠 Tech Stack
+
+- **React (JSX)**
+- **Vite**
+- **React Router v6**
+- **Bootstrap 5**
+- **Chart.js + react-chartjs-2**
+- **CSS (Custom, modular)**
+
+---
