@@ -14,10 +14,11 @@ import Subcategory from "./pages/Configuration/Subcategory/Subcategory.jsx";
 import Vechicles from "./pages/Configuration/Vechicles/Vechicles.jsx";
 import StaticContent from "./pages/StaticContent/StaticContent.jsx";
 import Faq from "./pages/Faq/Faq.jsx";
+import { HashRouter } from "react-router-dom";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
@@ -44,6 +45,6 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
