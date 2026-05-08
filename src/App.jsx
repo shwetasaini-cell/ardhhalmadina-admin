@@ -1,11 +1,12 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import Login from "./pages/Login/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";
-import Contacts from "./pages/Contacts/Contacts";
 import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
 import UserList from "./pages/UserManagement/UserList/UserList";
 import AddMaterial from "./pages/Configuration/AddMaterial/AddMaterial.jsx";
 import Category from "./pages/Configuration/Category/Categoey.jsx";
@@ -13,16 +14,15 @@ import Subcategory from "./pages/Configuration/Subcategory/Subcategory.jsx";
 import Vechicles from "./pages/Configuration/Vechicles/Vechicles.jsx";
 import StaticContent from "./pages/StaticContent/StaticContent.jsx";
 import Faq from "./pages/Faq/Faq.jsx";
-import { HashRouter } from "react-router-dom";
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ToastContainer position="top-right" autoClose={3000} />
+
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<Login />} />
-        {/* <Route path="/forgot-password" element={<ForgotPassword />} /> */}
 
         {/* PROTECTED */}
         <Route element={<ProtectedRoute />}>
@@ -44,6 +44,6 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

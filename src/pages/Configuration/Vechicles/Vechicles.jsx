@@ -24,8 +24,6 @@ import axiosInstance from "../../../utils/axiosInstance";
 
 const vehicleStatuses = ["active", "inactive", "blocked", "deleted"];
 
-
-
 const getStatusDisplay = (status) => {
   switch (status) {
     case "active":

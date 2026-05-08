@@ -680,47 +680,6 @@ export default function MaterialList() {
   return (
     <div className="material-page">
       <ToastContainer position="top-right" autoClose={3000} />
-
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon blue">
-            <FaBoxes />
-          </div>
-          <div className="stat-info">
-            <h3>{materials.length}</h3>
-            <p>Total Materials</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon green">
-            <FaDollarSign />
-          </div>
-          <div className="stat-info">
-            <h3>₹{totalValue.toLocaleString()}</h3>
-            <p>Inventory Value</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon orange">
-            <FaWarehouse />
-          </div>
-          <div className="stat-info">
-            <h3>{inStockCount}</h3>
-            <p>In Stock</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon red">
-            <FaExclamationTriangle />
-          </div>
-          <div className="stat-info">
-            <h3>{lowStockCount}</h3>
-            <p>Low Stock Alert</p>
-          </div>
-        </div>
-      </div>
-
       {/* Header */}
       <div className="page-header">
         <div className="header-left">
