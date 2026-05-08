@@ -137,7 +137,6 @@ export default function VehicleManagement() {
       if (result.success) {
         let allItems = [];
 
-        // Handle different category filters
         if (categoryFilter === "all") {
           // Fetch all categories
           const [vehicleRes, machineryRes, equipmentRes] = await Promise.all([
@@ -151,7 +150,6 @@ export default function VehicleManagement() {
               `/listings/?listingCategory=equipment&listingType=${listingTypeFilter !== "all" ? listingTypeFilter : ""}&status=${statusFilter !== "all" ? statusFilter : ""}&search=${debouncedSearchTerm ? encodeURIComponent(debouncedSearchTerm) : ""}`,
             ),
           ]);
-
           allItems = [
             ...(vehicleRes.data?.data?.vehicle || vehicleRes.data?.data || []),
             ...(machineryRes.data?.data?.machinery ||
@@ -827,32 +825,6 @@ export default function VehicleManagement() {
                           >
                             <FaEye />
                           </button>
-                          {/* <button
-                            className="action-icon edit"
-                            onClick={() => openEditModal(item)}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                              marginRight: "8px",
-                            }}
-                          >
-                            <FaEdit />
-                          </button> */}
-                          {/* <button
-                            className="action-icon delete"
-                            onClick={() => {
-                              setItemToDelete(item);
-                              setShowDeleteModal(true);
-                            }}
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <FaTrash />
-                          </button> */}
                         </div>
                         <select
                           onChange={(e) =>
@@ -895,7 +867,7 @@ export default function VehicleManagement() {
                 className="pagination"
                 style={{
                   display: "flex",
-                  justifyContent: "center",
+                  justifyContent: "flex-end",
                   gap: "8px",
                   marginTop: "20px",
                 }}
@@ -912,6 +884,7 @@ export default function VehicleManagement() {
                 >
                   Previous
                 </button>
+
                 {[...Array(totalPages)].map((_, i) => (
                   <button
                     key={i}
@@ -920,7 +893,7 @@ export default function VehicleManagement() {
                     style={{
                       padding: "8px 12px",
                       border: "1px solid #ddd",
-                      background: currentPage === i + 1 ? "#667eea" : "white",
+                      background: currentPage === i + 1 ? "#2c8769" : "white",
                       color: currentPage === i + 1 ? "white" : "black",
                       cursor: "pointer",
                     }}
@@ -928,6 +901,7 @@ export default function VehicleManagement() {
                     {i + 1}
                   </button>
                 ))}
+
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}

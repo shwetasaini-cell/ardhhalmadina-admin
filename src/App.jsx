@@ -8,7 +8,6 @@ import AdminLayout from "./layouts/AdminLayout";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import UserList from "./pages/UserManagement/UserList/UserList";
 import AddMaterial from "./pages/Configuration/AddMaterial/AddMaterial.jsx";
-import AddType from "./pages/Configuration/AddType/AddType.jsx";
 import Category from "./pages/Configuration/Category/Categoey.jsx";
 import Subcategory from "./pages/Configuration/Subcategory/Subcategory.jsx";
 import Vechicles from "./pages/Configuration/Vechicles/Vechicles.jsx";
@@ -33,7 +32,6 @@ export default function App() {
               path="/configuration/add-material"
               element={<AddMaterial />}
             />
-            <Route path="/configuration/add-type" element={<AddType />} />
             <Route path="/configuration/category" element={<Category />} />
             <Route
               path="/configuration/subcategory"
