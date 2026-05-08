@@ -19,6 +19,10 @@ import "react-toastify/dist/ReactToastify.css";
 import "./SubcategoryManagement.css";
 import axiosInstance from "../../../utils/axiosInstance";
 
+// Local placeholder image as data URL (gray background with text)
+const PLACEHOLDER_IMAGE =
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23cccccc'/%3E%3Ctext x='50' y='50' font-size='12' text-anchor='middle' dy='.3em' fill='%23666666'%3ENo Image%3C/text%3E%3C/svg%3E";
+
 export default function SubcategoryManagement() {
   const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -104,8 +108,7 @@ export default function SubcategoryManagement() {
             ? item.categoryId?._id || item.categoryId?.id
             : item.categoryId,
         name: item.name,
-        image:
-          item.image || "https://via.placeholder.com/100x100?text=No+Image",
+        image: item.image || PLACEHOLDER_IMAGE,
         isBlocked: item.status === "blocked" || item.isBlocked === true,
         status: item.status || (item.isBlocked ? "blocked" : "active"),
       }));
@@ -183,7 +186,6 @@ export default function SubcategoryManagement() {
   const handleImageChange = (e, isEdit = false) => {
     const file = e.target.files[0];
     if (file) {
-
       const validTypes = [
         "image/jpeg",
         "image/png",
@@ -310,6 +312,7 @@ export default function SubcategoryManagement() {
       setLoading(false);
     }
   };
+
   const handleDelete = (id) => {
     const subcategoryToDelete = subcategories.find((s) => s.id === id);
     setDeleteConfirm({
@@ -419,6 +422,10 @@ export default function SubcategoryManagement() {
     );
 
     return category ? category.name : "Unknown Category";
+  };
+
+  const handleImageError = (e) => {
+    e.target.src = PLACEHOLDER_IMAGE;
   };
 
   return (
@@ -541,7 +548,7 @@ export default function SubcategoryManagement() {
                         </td>
                         <td className="image-cell">
                           <img
-                            src={subcategory.image}
+                            src={subcategory.image || PLACEHOLDER_IMAGE}
                             alt={subcategory.name}
                             className="subcategory-image"
                             style={{
@@ -550,10 +557,7 @@ export default function SubcategoryManagement() {
                               objectFit: "cover",
                               borderRadius: "4px",
                             }}
-                            onError={(e) => {
-                              e.target.src =
-                                "https://via.placeholder.com/100x100?text=No+Image";
-                            }}
+                            onError={handleImageError}
                           />
                         </td>
                         <td className="name-cell">
@@ -896,10 +900,11 @@ export default function SubcategoryManagement() {
                         editSubcategory.imagePreview ||
                         (typeof editSubcategory.image === "string"
                           ? editSubcategory.image
-                          : "https://via.placeholder.com/100x100?text=No+Image")
+                          : PLACEHOLDER_IMAGE)
                       }
                       alt="Preview"
                       className="image-preview"
+                      onError={handleImageError}
                     />
                     <button
                       type="button"
@@ -972,10 +977,7 @@ export default function SubcategoryManagement() {
             <div className="modal-body view-body">
               <div className="view-image-container">
                 <img
-                  src={
-                    viewSubcategory.image ||
-                    "https://via.placeholder.com/200x200?text=No+Image"
-                  }
+                  src={viewSubcategory.image || PLACEHOLDER_IMAGE}
                   alt={viewSubcategory.name}
                   className="view-image"
                   style={{
@@ -984,10 +986,7 @@ export default function SubcategoryManagement() {
                     objectFit: "cover",
                     borderRadius: "8px",
                   }}
-                  onError={(e) => {
-                    e.target.src =
-                      "https://via.placeholder.com/200x200?text=No+Image";
-                  }}
+                  onError={handleImageError}
                 />
               </div>
               <div className="view-item">
