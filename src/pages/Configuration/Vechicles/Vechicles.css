@@ -714,7 +714,7 @@
   }
 }
 /* Filters Container - Redesigned */
-.filters-container {
+.filters-containers {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
   border-radius: 16px;
   padding: 20px;
@@ -766,7 +766,7 @@
   transform: translateY(-1px);
 }
 
-.filters-grid {
+.filters-grids {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
@@ -927,7 +927,7 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .filters-grid {
+  .filters-grids {
     grid-template-columns: 1fr;
   }
 

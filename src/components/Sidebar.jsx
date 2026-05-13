@@ -22,6 +22,16 @@ import {
   FaCreditCard,
   FaFolderOpen,
   FaTruck,
+  FaTools,
+  FaGlobe,
+  FaQuestion,
+  FaBoxes,
+  FaThLarge,
+  FaShoppingCart,
+  FaClipboardList,
+  FaHourglassHalf,
+  FaCheckCircle,
+  FaTimesCircle,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -35,6 +45,7 @@ export default function Sidebar({ collapsed, onClose }) {
   const [isMobile, setIsMobile] = useState(false);
   const [configOpen, setConfigOpen] = useState(false);
   const [staticOpen, setStaticOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -144,16 +155,16 @@ export default function Sidebar({ collapsed, onClose }) {
               className="submenu-item"
               onClick={handleNavClick}
             >
-              <FaFolder className="submenu-icon" />
+              <FaThLarge className="submenu-icon" />
               Category
             </NavLink>
             <NavLink
-              to="/configuration/Subcategory"
+              to="/configuration/material-category"
               className="submenu-item"
               onClick={handleNavClick}
             >
-              <FaFolderOpen className="submenu-icon" />
-              Subcategory
+              <FaBoxes className="submenu-icon" />
+              Material Category
             </NavLink>
 
             <NavLink
@@ -174,12 +185,22 @@ export default function Sidebar({ collapsed, onClose }) {
             </NavLink>
           </div>
         )}
+
+        {/* REQUIREMENTS */}
+        <NavLink
+          to="/requirements"
+          className="menu-item"
+          onClick={handleNavClick}
+        >
+          <FaTools />
+          {!collapsed && <span>Requirements</span>}
+        </NavLink>
         {/* STATIC CONTENT */}
         <div
           className={`menu-item dropdown ${staticOpen ? "open" : ""}`}
           onClick={() => !collapsed && setStaticOpen(!staticOpen)}
         >
-          <FaCog />
+          <FaGlobe />
           {!collapsed && (
             <>
               <span>Web Content</span>
@@ -195,16 +216,69 @@ export default function Sidebar({ collapsed, onClose }) {
               onClick={handleNavClick}
             >
               <FaFolder className="submenu-icon" />
-              Static Content 
+              Static Content
             </NavLink>
             <NavLink
               to="/faq"
               className="submenu-item"
               onClick={handleNavClick}
             >
-              <FaFolder className="submenu-icon" />
-             Faq
+              <FaQuestion className="submenu-icon" />
+              Faq
             </NavLink>
+          </div>
+        )}
+        {/* ORDER MANAGEMENT DROPDOWN */}
+        <div
+          className={`menu-item dropdown ${orderOpen ? "open" : ""}`}
+          onClick={() => !collapsed && setOrderOpen(!orderOpen)}
+        >
+          <FaShoppingCart />
+          {!collapsed && (
+            <>
+              <span>Order Management</span>
+              <FaChevronDown className="dropdown-icon" />
+            </>
+          )}
+        </div>
+
+        {orderOpen && !collapsed && (
+          <div className="submenu">
+            <NavLink
+              to="/order-management"
+              className="submenu-item"
+              onClick={handleNavClick}
+            >
+              <FaClipboardList className="submenu-icon" />
+              Orders List
+            </NavLink>
+
+            {/* <NavLink
+              to="/order-management/pending-orders"
+              className="submenu-item"
+              onClick={handleNavClick}
+            >
+              <FaHourglassHalf className="submenu-icon" />
+              Pending Orders
+            </NavLink>
+
+            <NavLink
+              to="/order-management/completed-orders"
+              className="submenu-item"
+              onClick={handleNavClick}
+            >
+              <FaCheckCircle className="submenu-icon" />
+              Completed Orders
+            </NavLink>
+
+            <NavLink
+              to="/order-management/cancelled-orders"
+              className="submenu-item"
+              onClick={handleNavClick}
+            >
+              <FaTimesCircle className="submenu-icon" />
+              Cancelled Orders
+            </NavLink> */}
           </div>
         )}
       </nav>

@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-build-classic": "^41.4.2",
     "@ckeditor/ckeditor5-react": "^11.1.2",
+    "@tiptap/extension-color": "^3.23.2",
+    "@tiptap/extension-text-align": "^3.23.2",
+    "@tiptap/extension-text-style": "^3.23.2",
+    "@tiptap/react": "^3.23.2",
+    "@tiptap/starter-kit": "^3.23.2",
     "axios": "^1.13.4",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",

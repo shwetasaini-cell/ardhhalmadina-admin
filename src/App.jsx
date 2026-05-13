@@ -9,16 +9,18 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 
 import UserList from "./pages/UserManagement/UserList/UserList";
 import AddMaterial from "./pages/Configuration/AddMaterial/AddMaterial.jsx";
-import Category from "./pages/Configuration/Category/Categoey.jsx";
-import Subcategory from "./pages/Configuration/Subcategory/Subcategory.jsx";
+import Category from "./pages/Configuration/Category/ListingCategoey.jsx";
+import MaterialCategory from "./pages/Configuration/AddMaterial/MaterialCategory.jsx";
+
 import Vechicles from "./pages/Configuration/Vechicles/Vechicles.jsx";
 import StaticContent from "./pages/StaticContent/StaticContent.jsx";
 import Faq from "./pages/Faq/Faq.jsx";
-import { HashRouter } from "react-router-dom";
+import Requirements from "./pages/Requirements/Requirements.jsx";
+import OrderManagement from "./pages/Orders/OrderManagement.jsx";
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
@@ -36,15 +38,17 @@ export default function App() {
             />
             <Route path="/configuration/category" element={<Category />} />
             <Route
-              path="/configuration/subcategory"
-              element={<Subcategory />}
+              path="/configuration/material-category"
+              element={<MaterialCategory />}
             />
             <Route path="/configuration/vechicles" element={<Vechicles />} />
             <Route path="/static-content" element={<StaticContent />} />
             <Route path="/faq" element={<Faq />} />
+            <Route path="/requirements" element={<Requirements />} />
+            <Route path="/order-management" element={<OrderManagement />} />
           </Route>
         </Route>
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }

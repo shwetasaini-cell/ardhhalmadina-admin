@@ -469,17 +469,7 @@ export default function FAQManagement() {
         </div>
       )}
 
-      {/* Info Footer */}
-      <div className="info-footer">
-        <div className="info-text">
-          <FaInfoCircle className="info-icon" />
-          <span>
-            Manage your FAQ content here. Each FAQ consists of a type, question,
-            and answer pair. Changes will be reflected immediately on the
-            frontend.
-          </span>
-        </div>
-      </div>
+    
     </div>
   );
 }

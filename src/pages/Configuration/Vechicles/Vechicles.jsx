@@ -5,17 +5,25 @@ import {
   FaTimes,
   FaInfoCircle,
   FaEdit,
-  FaTrash,
-  FaPlus,
   FaBoxes,
-  FaDollarSign,
-  FaTruck,
   FaCheckCircle,
-  FaTimesCircle,
+  FaTruck,
   FaExclamationTriangle,
   FaFilter,
   FaMapMarkerAlt,
   FaCalendarAlt,
+  FaCog,
+  FaGasPump,
+  FaRoad,
+  FaWeightHanging,
+  FaRulerCombined,
+  FaIdCard,
+  FaCalendarWeek,
+  FaShieldAlt,
+  FaWrench,
+  FaBolt,
+  FaTachometerAlt,
+  FaDatabase,
 } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -59,42 +67,37 @@ export default function VehicleManagement() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [categoryFilter, setCategoryFilter] = useState("all"); // New: vehicle, machinery, equipment
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [listingTypeFilter, setListingTypeFilter] = useState("all");
   const [categories, setCategories] = useState([]);
-
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [itemToDelete, setItemToDelete] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const perPage = 5;
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   const [formData, setFormData] = useState({
-    vehicleName: "",
+    name: "",
     description: "",
     status: "active",
     addressLine: "",
     companyName: "",
-    vehicleRC: "",
+    uniqueCode: "",
     categoryId: "",
     listingType: "rent",
     dailyRate: "",
     weeklyRate: "",
     monthlyRate: "",
+    sellingPrice: "",
     latitude: "28.7041",
     longitude: "77.1025",
     photos: [],
-    equipmentCategory: "equipment", // vehicle, machinery, equipment
+    listingCategory: "equipment",
   });
 
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const perPage = 5;
-
-  // Debounce search
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -103,7 +106,6 @@ export default function VehicleManagement() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Load categories
   const loadCategories = async () => {
     try {
       const response = await axiosInstance.get("/category");
@@ -119,17 +121,30 @@ export default function VehicleManagement() {
     }
   };
 
-  // Fetch vehicles with filters
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      let url = `/listings/?listingCategory=${categoryFilter === "all" ? "equipment" : categoryFilter}`;
 
-      if (listingTypeFilter !== "all")
-        url += `&listingType=${listingTypeFilter}`;
-      if (statusFilter !== "all") url += `&status=${statusFilter}`;
-      if (debouncedSearchTerm)
-        url += `&search=${encodeURIComponent(debouncedSearchTerm)}`;
+      let url = `/listings/admin/listings?`;
+      const params = new URLSearchParams();
+
+      if (categoryFilter !== "all") {
+        params.append("listingCategory", categoryFilter);
+      }
+
+      if (listingTypeFilter !== "all") {
+        params.append("listingType", listingTypeFilter);
+      }
+
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
+      }
+
+      if (debouncedSearchTerm) {
+        params.append("search", debouncedSearchTerm);
+      }
+
+      url += params.toString();
 
       const response = await axiosInstance.get(url);
       const result = response.data;
@@ -138,219 +153,186 @@ export default function VehicleManagement() {
         let allItems = [];
 
         if (categoryFilter === "all") {
-          // Fetch all categories
-          const [vehicleRes, machineryRes, equipmentRes] = await Promise.all([
-            axiosInstance.get(
-              `/listings/?listingCategory=vehicle&listingType=${listingTypeFilter !== "all" ? listingTypeFilter : ""}&status=${statusFilter !== "all" ? statusFilter : ""}&search=${debouncedSearchTerm ? encodeURIComponent(debouncedSearchTerm) : ""}`,
-            ),
-            axiosInstance.get(
-              `/listings/?listingCategory=machinery&listingType=${listingTypeFilter !== "all" ? listingTypeFilter : ""}&status=${statusFilter !== "all" ? statusFilter : ""}&search=${debouncedSearchTerm ? encodeURIComponent(debouncedSearchTerm) : ""}`,
-            ),
-            axiosInstance.get(
-              `/listings/?listingCategory=equipment&listingType=${listingTypeFilter !== "all" ? listingTypeFilter : ""}&status=${statusFilter !== "all" ? statusFilter : ""}&search=${debouncedSearchTerm ? encodeURIComponent(debouncedSearchTerm) : ""}`,
-            ),
-          ]);
           allItems = [
-            ...(vehicleRes.data?.data?.vehicle || vehicleRes.data?.data || []),
-            ...(machineryRes.data?.data?.machinery ||
-              machineryRes.data?.data ||
-              []),
-            ...(equipmentRes.data?.data?.equipment ||
-              equipmentRes.data?.data ||
-              []),
+            ...(result.data?.vehicle || []),
+            ...(result.data?.machinery || []),
+            ...(result.data?.equipment || []),
           ];
-        } else {
-          // Fetch specific category
-          if (result.data && result.data[categoryFilter]) {
-            allItems = result.data[categoryFilter];
-          } else if (Array.isArray(result.data)) {
-            allItems = result.data;
-          }
+        } else if (result.data && result.data[categoryFilter]) {
+          allItems = result.data[categoryFilter];
         }
 
-        const transformedVehicles = allItems.map((vehicle) => {
-          let categoryName = "Equipment";
-          if (vehicle.categoryId?.name) categoryName = vehicle.categoryId.name;
+        const transformedListings = allItems.map((listing) => {
+          let dailyRate = 0,
+            weeklyRate = 0,
+            monthlyRate = 0,
+            sellingPrice = 0;
+
+          if (listing.listingType === "rent") {
+            dailyRate = listing.rentDetails?.dailyRate || 0;
+            weeklyRate = listing.rentDetails?.weeklyRate || 0;
+            monthlyRate = listing.rentDetails?.monthlyRate || 0;
+          } else if (listing.listingType === "sell") {
+            sellingPrice = listing.sellDetails?.sellingPrice || 0;
+          }
 
           let lat = 28.7041,
             lng = 77.1025;
-          if (vehicle.location?.coordinates) {
-            lng = vehicle.location.coordinates[0];
-            lat = vehicle.location.coordinates[1];
+          if (listing.location?.coordinates) {
+            lng = listing.location.coordinates[0];
+            lat = listing.location.coordinates[1];
+          }
+
+          let categorySpecificData = {};
+          if (listing.listingCategory === "vehicle" && listing.vehicleData) {
+            categorySpecificData = {
+              brand: listing.vehicleData.brand,
+              model: listing.vehicleData.model,
+              variant: listing.vehicleData.variant,
+              manufacturingYear: listing.vehicleData.manufacturingYear,
+              condition: listing.vehicleData.condition,
+              color: listing.vehicleData.color,
+              vehicleType: listing.vehicleData.vehicleType,
+              registration: listing.vehicleData.registration,
+              technicalSpecifications:
+                listing.vehicleData.technicalSpecifications,
+              features: listing.vehicleData.features,
+              availability: listing.vehicleData.availability,
+              delivery: listing.vehicleData.delivery,
+            };
+          } else if (
+            listing.listingCategory === "machinery" &&
+            listing.machineryData
+          ) {
+            categorySpecificData = {
+              brand: listing.machineryData.brand,
+              model: listing.machineryData.model,
+              variant: listing.machineryData.variant,
+              manufacturingYear: listing.machineryData.manufacturingYear,
+              condition: listing.machineryData.condition,
+              machineType: listing.machineryData.machineType,
+              serialNumber: listing.machineryData.serialNumber,
+              technicalSpecifications:
+                listing.machineryData.technicalSpecifications,
+              features: listing.machineryData.features,
+              maintenance: listing.machineryData.maintenance,
+            };
+          } else if (
+            listing.listingCategory === "equipment" &&
+            listing.equipmentData
+          ) {
+            categorySpecificData = {
+              brand: listing.equipmentData.brand,
+              model: listing.equipmentData.model,
+              condition: listing.equipmentData.condition,
+              equipmentType: listing.equipmentData.equipmentType,
+              specifications: listing.equipmentData.specifications,
+              features: listing.equipmentData.features,
+              quantity: listing.equipmentData.quantity,
+            };
           }
 
           return {
-            id: vehicle._id,
-            name: vehicle.name,
-            vehicleType: categoryName,
-            registrationNo: vehicle.uniqueCode || "N/A",
-            status: vehicle.status,
-            dailyRate: vehicle.rentDetails?.dailyRate || 0,
-            weeklyRate: vehicle.rentDetails?.weeklyRate || 0,
-            monthlyRate: vehicle.rentDetails?.monthlyRate || 0,
-            location: vehicle.addressLine,
-            description: vehicle.description,
-            createdAt: new Date(vehicle.createdAt).toLocaleDateString(),
-            companyName: vehicle.companyName,
-            listingType: vehicle.listingType,
-            photos: vehicle.photos || [],
+            id: listing._id,
+            name: listing.name,
+            description: listing.description,
+            registrationNo: listing.uniqueCode || listing.vehicleRC || "N/A",
+            status: listing.status,
+            dailyRate: dailyRate,
+            weeklyRate: weeklyRate,
+            monthlyRate: monthlyRate,
+            sellingPrice: sellingPrice,
+            location: listing.addressLine,
+            createdAt: new Date(listing.createdAt).toLocaleDateString(),
+            companyName: listing.companyName,
+            listingType: listing.listingType,
+            photos: listing.photos || [],
             coordinates: [lng, lat],
-            equipmentCategory: vehicle.listingCategory || "equipment",
+            listingCategory: listing.listingCategory || "equipment",
             categoryId:
-              typeof vehicle.categoryId === "object"
-                ? vehicle.categoryId._id
-                : vehicle.categoryId,
+              typeof listing.categoryId === "object"
+                ? listing.categoryId._id
+                : listing.categoryId,
+            categoryName:
+              typeof listing.categoryId === "object"
+                ? listing.categoryId.name
+                : "",
+            userId: listing.userId,
+            ...categorySpecificData,
           };
         });
 
-        setItems(transformedVehicles);
+        setItems(transformedListings);
         setCurrentPage(1);
       }
     } catch (error) {
-      toast.error("Error loading vehicles");
+      toast.error("Error loading listings");
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Add vehicle
-  const handleAddVehicle = async () => {
-    if (!formData.vehicleName || !formData.dailyRate) {
-      toast.error("Vehicle name and daily rate are required");
+  const handleEditListing = async () => {
+    if (!formData.name) {
+      toast.error("Equipment name is required");
       return;
     }
 
     setUploading(true);
     try {
-      const vehicleData = {
-        name: formData.vehicleName,
-        companyName: formData.companyName,
-        categoryId: formData.categoryId,
-        uniqueCode: formData.vehicleRC,
-        description: formData.description,
-        addressLine: formData.addressLine,
-        listingType: formData.listingType,
-        status: "active",
-        listingCategory: formData.equipmentCategory,
-        rentDetails: {
-          dailyRate: parseFloat(formData.dailyRate) || 0,
-          weeklyRate: parseFloat(formData.weeklyRate) || 0,
-          monthlyRate: parseFloat(formData.monthlyRate) || 0,
-        },
-        location: {
-          type: "Point",
-          coordinates: [
-            parseFloat(formData.longitude) || 77.1025,
-            parseFloat(formData.latitude) || 28.7041,
-          ],
-        },
-      };
+      const formDataToSend = new FormData();
 
-      const response = await axiosInstance.post(
-        "/listings/create",
-        vehicleData,
-      );
+      formDataToSend.append("name", formData.name);
+      formDataToSend.append("description", formData.description);
+      formDataToSend.append("addressLine", formData.addressLine);
+      formDataToSend.append("companyName", formData.companyName);
+      formDataToSend.append("uniqueCode", formData.uniqueCode);
+      formDataToSend.append("categoryId", formData.categoryId);
+      formDataToSend.append("listingType", formData.listingType);
 
-      if (response.data?.success) {
-        const newVehicleId = response.data.data?.listing?._id;
-
-        if (newVehicleId && selectedFiles.length > 0) {
-          const photoFormData = new FormData();
-          selectedFiles.forEach((file) => photoFormData.append("photos", file));
-          await axiosInstance.post(
-            `/listings/${newVehicleId}/upload-photos`,
-            photoFormData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            },
-          );
-        }
-
-        toast.success("Vehicle added successfully!");
-        fetchVehicles();
-        setShowAddModal(false);
-        resetForm();
-        setSelectedFiles([]);
+      if (formData.listingType === "rent") {
+        formDataToSend.append("dailyRate", formData.dailyRate);
+        formDataToSend.append("weeklyRate", formData.weeklyRate);
+        formDataToSend.append("monthlyRate", formData.monthlyRate);
+      } else {
+        formDataToSend.append("sellingPrice", formData.sellingPrice);
       }
-    } catch (error) {
-      toast.error("Error adding vehicle");
-      console.error("Add error:", error);
-    } finally {
-      setUploading(false);
-    }
-  };
 
-  // Edit vehicle
-  const handleEditVehicle = async () => {
-    if (!formData.vehicleName) {
-      toast.error("Vehicle name is required");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const vehicleData = {
-        name: formData.vehicleName,
-        companyName: formData.companyName,
-        categoryId: formData.categoryId,
-        uniqueCode: formData.vehicleRC,
-        description: formData.description,
-        addressLine: formData.addressLine,
-        listingType: formData.listingType,
-        status: formData.status,
-        listingCategory: formData.equipmentCategory,
-        rentDetails: {
-          dailyRate: parseFloat(formData.dailyRate) || 0,
-          weeklyRate: parseFloat(formData.weeklyRate) || 0,
-          monthlyRate: parseFloat(formData.monthlyRate) || 0,
-        },
-        location: {
-          type: "Point",
-          coordinates: [
-            parseFloat(formData.longitude) || 77.1025,
-            parseFloat(formData.latitude) || 28.7041,
-          ],
-        },
-      };
+      selectedFiles.forEach((file) => {
+        formDataToSend.append("photos", file);
+      });
 
       const response = await axiosInstance.put(
-        `/listings/${selectedItem.id}`,
-        vehicleData,
+        `/listings/update/${selectedItem.id}`,
+        formDataToSend,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
       );
 
       if (response.data?.success) {
-        if (selectedFiles.length > 0) {
-          const photoFormData = new FormData();
-          selectedFiles.forEach((file) => photoFormData.append("photos", file));
-          await axiosInstance.post(
-            `/listings/${selectedItem.id}/upload-photos`,
-            photoFormData,
-            {
-              headers: { "Content-Type": "multipart/form-data" },
-            },
-          );
-        }
-        toast.success("Vehicle updated successfully!");
+        toast.success("Equipment updated successfully!");
         fetchVehicles();
         setShowEditModal(false);
         resetForm();
         setSelectedFiles([]);
       }
     } catch (error) {
-      toast.error("Error updating vehicle");
+      toast.error("Error updating equipment");
       console.error("Update error:", error);
     } finally {
       setUploading(false);
     }
   };
 
-  // Update status
-  const updateVehicleStatus = async (vehicleId, newStatus) => {
+  const updateListingStatus = async (listingId, newStatus) => {
     try {
       const response = await axiosInstance.patch(
-        `/listings/updateStatus/${vehicleId}`,
-        { status: newStatus },
+        `/listings/updateStatus/${listingId}`,
+        {
+          status: newStatus,
+        },
       );
       if (response.data?.success) {
         toast.success(`Status updated to ${getStatusDisplay(newStatus)}`);
@@ -362,42 +344,24 @@ export default function VehicleManagement() {
     }
   };
 
-  // Delete vehicle
-  const handleDeleteVehicle = async () => {
-    try {
-      const response = await axiosInstance.delete(
-        `/listings/${itemToDelete.id}`,
-      );
-      if (response.data?.success) {
-        toast.success("Vehicle deleted successfully!");
-        fetchVehicles();
-        setShowDeleteModal(false);
-        setItemToDelete(null);
-      }
-    } catch (error) {
-      toast.error("Error deleting vehicle");
-      console.error("Delete error:", error);
-    }
-  };
-
-  // Reset form
   const resetForm = () => {
     setFormData({
-      vehicleName: "",
+      name: "",
       description: "",
       status: "active",
       addressLine: "",
       companyName: "",
-      vehicleRC: "",
+      uniqueCode: "",
       categoryId: "",
       listingType: "rent",
       dailyRate: "",
       weeklyRate: "",
       monthlyRate: "",
+      sellingPrice: "",
       latitude: "28.7041",
       longitude: "77.1025",
       photos: [],
-      equipmentCategory: "equipment",
+      listingCategory: "equipment",
     });
     setSelectedItem(null);
     setSelectedFiles([]);
@@ -406,21 +370,22 @@ export default function VehicleManagement() {
   const openEditModal = (item) => {
     setSelectedItem(item);
     setFormData({
-      vehicleName: item.name,
+      name: item.name,
       description: item.description || "",
       status: item.status,
       addressLine: item.location || "",
       companyName: item.companyName || "",
-      vehicleRC: item.registrationNo || "",
+      uniqueCode: item.registrationNo || "",
       categoryId: item.categoryId || "",
       listingType: item.listingType || "rent",
-      dailyRate: item.dailyRate || "",
-      weeklyRate: item.weeklyRate || "",
-      monthlyRate: item.monthlyRate || "",
-      latitude: item.coordinates?.[1] || "28.7041",
-      longitude: item.coordinates?.[0] || "77.1025",
+      dailyRate: item.dailyRate?.toString() || "",
+      weeklyRate: item.weeklyRate?.toString() || "",
+      monthlyRate: item.monthlyRate?.toString() || "",
+      sellingPrice: item.sellingPrice?.toString() || "",
+      latitude: item.coordinates?.[1]?.toString() || "28.7041",
+      longitude: item.coordinates?.[0]?.toString() || "77.1025",
       photos: item.photos || [],
-      equipmentCategory: item.equipmentCategory || "equipment",
+      listingCategory: item.listingCategory || "equipment",
     });
     setSelectedFiles([]);
     setShowEditModal(true);
@@ -431,7 +396,7 @@ export default function VehicleManagement() {
       status === "active" ? (
         <FaCheckCircle />
       ) : status === "inactive" ? (
-        <FaTimesCircle />
+        <FaTimes />
       ) : (
         <FaExclamationTriangle />
       );
@@ -442,7 +407,6 @@ export default function VehicleManagement() {
     );
   };
 
-  // Clear all filters
   const clearAllFilters = () => {
     setStatusFilter("all");
     setCategoryFilter("all");
@@ -452,7 +416,6 @@ export default function VehicleManagement() {
     setCurrentPage(1);
   };
 
-  // Stats
   const filteredItems = items.filter(
     (item) => statusFilter === "all" || item.status === statusFilter,
   );
@@ -467,7 +430,6 @@ export default function VehicleManagement() {
     (v) => v.status === "blocked",
   ).length;
 
-  // Pagination
   const totalPages = Math.ceil(filteredItems.length / perPage);
   const currentItems = filteredItems.slice(
     (currentPage - 1) * perPage,
@@ -486,7 +448,399 @@ export default function VehicleManagement() {
     setCurrentPage(1);
   }, [categoryFilter, statusFilter, listingTypeFilter, debouncedSearchTerm]);
 
-  // Styles for images
+  const renderCategoryDetails = (item) => {
+    if (item.listingCategory === "vehicle") {
+      return (
+        <>
+          {(item.brand || item.model || item.variant) && (
+            <div className="details-section">
+              <h4>
+                <FaCog /> Vehicle Information
+              </h4>
+              <div className="details-grid">
+                {item.brand && (
+                  <div>
+                    <strong>Brand:</strong> {item.brand}
+                  </div>
+                )}
+                {item.model && (
+                  <div>
+                    <strong>Model:</strong> {item.model}
+                  </div>
+                )}
+                {item.variant && (
+                  <div>
+                    <strong>Variant:</strong> {item.variant}
+                  </div>
+                )}
+                {item.manufacturingYear && (
+                  <div>
+                    <strong>Year:</strong> {item.manufacturingYear}
+                  </div>
+                )}
+                {item.condition && (
+                  <div>
+                    <strong>Condition:</strong> {item.condition}
+                  </div>
+                )}
+                {item.color && (
+                  <div>
+                    <strong>Color:</strong> {item.color}
+                  </div>
+                )}
+                {item.vehicleType && (
+                  <div>
+                    <strong>Vehicle Type:</strong> {item.vehicleType}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {item.technicalSpecifications &&
+            Object.keys(item.technicalSpecifications).length > 0 && (
+              <div className="details-section">
+                <h4>
+                  <FaTachometerAlt /> Technical Specifications
+                </h4>
+                <div className="details-grid">
+                  {item.technicalSpecifications.fuelType && (
+                    <div>
+                      <FaGasPump /> <strong>Fuel Type:</strong>{" "}
+                      {item.technicalSpecifications.fuelType}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.engineCapacity && (
+                    <div>
+                      <FaCog /> <strong>Engine Capacity:</strong>{" "}
+                      {item.technicalSpecifications.engineCapacity}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.horsepower && (
+                    <div>
+                      <FaBolt /> <strong>Horsepower:</strong>{" "}
+                      {item.technicalSpecifications.horsepower}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.transmission && (
+                    <div>
+                      <FaCog /> <strong>Transmission:</strong>{" "}
+                      {item.technicalSpecifications.transmission}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.driveType && (
+                    <div>
+                      <FaRoad /> <strong>Drive Type:</strong>{" "}
+                      {item.technicalSpecifications.driveType}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.mileage && (
+                    <div>
+                      <FaTachometerAlt /> <strong>Mileage:</strong>{" "}
+                      {Number(
+                        item.technicalSpecifications.mileage,
+                      ).toLocaleString()}{" "}
+                      km
+                    </div>
+                  )}
+                  {item.technicalSpecifications.loadCapacity && (
+                    <div>
+                      <FaWeightHanging /> <strong>Load Capacity:</strong>{" "}
+                      {item.technicalSpecifications.loadCapacity}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.seatingCapacity && (
+                    <div>
+                      <strong>Seating Capacity:</strong>{" "}
+                      {item.technicalSpecifications.seatingCapacity}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          {item.registration && Object.keys(item.registration).length > 0 && (
+            <div className="details-section">
+              <h4>
+                <FaIdCard /> Registration Details
+              </h4>
+              <div className="details-grid">
+                {item.registration.plateNumber && (
+                  <div>
+                    <strong>Plate Number:</strong>{" "}
+                    {item.registration.plateNumber}
+                  </div>
+                )}
+                {item.registration.registrationNumber && (
+                  <div>
+                    <strong>Registration No:</strong>{" "}
+                    {item.registration.registrationNumber}
+                  </div>
+                )}
+                {item.registration.mulkiyaExpiryDate && (
+                  <div>
+                    <FaCalendarAlt /> <strong>Mulkiya Expiry:</strong>{" "}
+                    {new Date(
+                      item.registration.mulkiyaExpiryDate,
+                    ).toLocaleDateString()}
+                  </div>
+                )}
+                {item.registration.insuranceExpiryDate && (
+                  <div>
+                    <FaShieldAlt /> <strong>Insurance Expiry:</strong>{" "}
+                    {new Date(
+                      item.registration.insuranceExpiryDate,
+                    ).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {item.features && Object.keys(item.features).length > 0 && (
+            <div className="details-section">
+              <h4>
+                <FaCheckCircle /> Features
+              </h4>
+              <div className="features-list">
+                {item.features.airConditioning && (
+                  <span className="feature-tag">❄️ Air Conditioning</span>
+                )}
+                {item.features.gpsTracking && (
+                  <span className="feature-tag">📍 GPS Tracking</span>
+                )}
+                {item.features.reverseCamera && (
+                  <span className="feature-tag">📹 Reverse Camera</span>
+                )}
+                {item.features.bluetooth && (
+                  <span className="feature-tag">🎵 Bluetooth</span>
+                )}
+                {item.features.fuelIncluded && (
+                  <span className="feature-tag">⛽ Fuel Included</span>
+                )}
+                {item.features.operatorIncluded && (
+                  <span className="feature-tag">👨‍✈️ Operator Included</span>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      );
+    } else if (item.listingCategory === "machinery") {
+      return (
+        <>
+          {(item.brand || item.model || item.machineType) && (
+            <div className="details-section">
+              <h4>
+                <FaCog /> Machinery Information
+              </h4>
+              <div className="details-grid">
+                {item.brand && (
+                  <div>
+                    <strong>Brand:</strong> {item.brand}
+                  </div>
+                )}
+                {item.model && (
+                  <div>
+                    <strong>Model:</strong> {item.model}
+                  </div>
+                )}
+                {item.variant && (
+                  <div>
+                    <strong>Variant:</strong> {item.variant}
+                  </div>
+                )}
+                {item.manufacturingYear && (
+                  <div>
+                    <strong>Year:</strong> {item.manufacturingYear}
+                  </div>
+                )}
+                {item.condition && (
+                  <div>
+                    <strong>Condition:</strong> {item.condition}
+                  </div>
+                )}
+                {item.machineType && (
+                  <div>
+                    <strong>Machine Type:</strong> {item.machineType}
+                  </div>
+                )}
+                {item.serialNumber && (
+                  <div>
+                    <strong>Serial No:</strong> {item.serialNumber}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {item.technicalSpecifications &&
+            Object.keys(item.technicalSpecifications).length > 0 && (
+              <div className="details-section">
+                <h4>
+                  <FaTachometerAlt /> Technical Specifications
+                </h4>
+                <div className="details-grid">
+                  {item.technicalSpecifications.enginePower && (
+                    <div>
+                      <FaBolt /> <strong>Engine Power:</strong>{" "}
+                      {item.technicalSpecifications.enginePower}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.operatingWeight && (
+                    <div>
+                      <FaWeightHanging /> <strong>Operating Weight:</strong>{" "}
+                      {item.technicalSpecifications.operatingWeight}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.bucketCapacity && (
+                    <div>
+                      <strong>Bucket Capacity:</strong>{" "}
+                      {item.technicalSpecifications.bucketCapacity}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.workingHeight && (
+                    <div>
+                      <FaRulerCombined /> <strong>Working Height:</strong>{" "}
+                      {item.technicalSpecifications.workingHeight}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.workingDepth && (
+                    <div>
+                      <strong>Working Depth:</strong>{" "}
+                      {item.technicalSpecifications.workingDepth}
+                    </div>
+                  )}
+                  {item.technicalSpecifications.loadCapacity && (
+                    <div>
+                      <FaWeightHanging /> <strong>Load Capacity:</strong>{" "}
+                      {item.technicalSpecifications.loadCapacity}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          {item.maintenance && Object.keys(item.maintenance).length > 0 && (
+            <div className="details-section">
+              <h4>
+                <FaWrench /> Maintenance Details
+              </h4>
+              <div className="details-grid">
+                {item.maintenance.workingHoursUsed && (
+                  <div>
+                    <strong>Working Hours:</strong>{" "}
+                    {Number(item.maintenance.workingHoursUsed).toLocaleString()}{" "}
+                    hrs
+                  </div>
+                )}
+                {item.maintenance.lastServiceDate && (
+                  <div>
+                    <FaCalendarWeek /> <strong>Last Service:</strong>{" "}
+                    {new Date(
+                      item.maintenance.lastServiceDate,
+                    ).toLocaleDateString()}
+                  </div>
+                )}
+                {item.maintenance.nextServiceDate && (
+                  <div>
+                    <FaCalendarAlt /> <strong>Next Service:</strong>{" "}
+                    {new Date(
+                      item.maintenance.nextServiceDate,
+                    ).toLocaleDateString()}
+                  </div>
+                )}
+                {item.maintenance.maintenanceStatus && (
+                  <div>
+                    <strong>Status:</strong>{" "}
+                    {item.maintenance.maintenanceStatus}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      );
+    } else if (item.listingCategory === "equipment") {
+      return (
+        <>
+          {(item.brand || item.model || item.equipmentType) && (
+            <div className="details-section">
+              <h4>
+                <FaCog /> Equipment Information
+              </h4>
+              <div className="details-grid">
+                {item.brand && (
+                  <div>
+                    <strong>Brand:</strong> {item.brand}
+                  </div>
+                )}
+                {item.model && (
+                  <div>
+                    <strong>Model:</strong> {item.model}
+                  </div>
+                )}
+                {item.condition && (
+                  <div>
+                    <strong>Condition:</strong> {item.condition}
+                  </div>
+                )}
+                {item.equipmentType && (
+                  <div>
+                    <strong>Equipment Type:</strong> {item.equipmentType}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {item.specifications &&
+            Object.keys(item.specifications).length > 0 && (
+              <div className="details-section">
+                <h4>
+                  <FaDatabase /> Specifications
+                </h4>
+                <div className="details-grid">
+                  {item.specifications.power && (
+                    <div>
+                      <FaBolt /> <strong>Power:</strong>{" "}
+                      {item.specifications.power}
+                    </div>
+                  )}
+                  {item.specifications.capacity && (
+                    <div>
+                      <strong>Capacity:</strong> {item.specifications.capacity}
+                    </div>
+                  )}
+                  {item.specifications.weight && (
+                    <div>
+                      <FaWeightHanging /> <strong>Weight:</strong>{" "}
+                      {item.specifications.weight}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+          {item.quantity && item.quantity.availableUnits && (
+            <div className="details-section">
+              <h4>
+                <FaBoxes /> Inventory
+              </h4>
+              <div className="details-grid">
+                <div>
+                  <strong>Available Units:</strong>{" "}
+                  {item.quantity.availableUnits}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      );
+    }
+    return null;
+  };
+
   const imageStyles = {
     thumbnail: {
       width: "50px",
@@ -509,25 +863,16 @@ export default function VehicleManagement() {
       cursor: "pointer",
       transition: "transform 0.2s",
     },
-    preview: {
-      width: "80px",
-      height: "80px",
-      objectFit: "cover",
-      borderRadius: "8px",
-    },
   };
 
   return (
     <div className="material-page">
       <ToastContainer position="top-right" autoClose={3000} />
 
-      {/* Header */}
       <div className="page-header headers-section">
         <div className="header-left">
-          <h1 className="page-title">Vehicle & Equipment Management</h1>
-          <p className="page-subtitle">
-            Manage and track all construction equipment
-          </p>
+          <h1 className="page-title">Listings Management</h1>
+          <p className="page-subtitle">Manage and track all user listings</p>
         </div>
         <div className="header-right">
           <div className="search-wrapper">
@@ -535,7 +880,7 @@ export default function VehicleManagement() {
             <input
               type="text"
               className="search-input"
-              placeholder="Search equipment..."
+              placeholder="Search listings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -543,15 +888,14 @@ export default function VehicleManagement() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
+      {/* <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon blue">
             <FaBoxes />
           </div>
           <div className="stat-info">
             <h3>{totalItems}</h3>
-            <p>Total Equipment</p>
+            <p>Total Listings</p>
           </div>
         </div>
         <div className="stat-card">
@@ -581,10 +925,9 @@ export default function VehicleManagement() {
             <p>Blocked</p>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      {/* Filters */}
-      <div className="filters-container">
+      <div className="filters-containers">
         <div className="filters-header">
           <div className="filters-title">
             <FaFilter /> <span>Filters</span>
@@ -593,24 +936,12 @@ export default function VehicleManagement() {
             categoryFilter !== "all" ||
             listingTypeFilter !== "all" ||
             searchTerm) && (
-            <button
-              className="clear-filters-btn"
-              onClick={clearAllFilters}
-              style={{
-                background: "none",
-                border: "none",
-                color: "#dc3545",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
+            <button className="clear-filters-btn" onClick={clearAllFilters}>
               <FaTimes /> Clear All
             </button>
           )}
         </div>
-        <div className="filters-grid">
+        <div className="filters-grids">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -628,7 +959,7 @@ export default function VehicleManagement() {
           >
             <option value="all">All Types</option>
             <option value="rent">For Rent</option>
-            <option value="sale">For Sale</option>
+            <option value="sell">For Sale</option>
           </select>
           <select
             value={statusFilter}
@@ -643,105 +974,8 @@ export default function VehicleManagement() {
             ))}
           </select>
         </div>
-
-        {/* Active Filters Display */}
-        <div
-          className="active-filters"
-          style={{
-            marginTop: "12px",
-            display: "flex",
-            gap: "8px",
-            flexWrap: "wrap",
-          }}
-        >
-          {categoryFilter !== "all" && (
-            <span
-              className="filter-tag"
-              style={{
-                background: "#f0f0f0",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              Category:{" "}
-              {categoryFilter.charAt(0).toUpperCase() + categoryFilter.slice(1)}
-              <FaTimes
-                onClick={() => setCategoryFilter("all")}
-                style={{ cursor: "pointer" }}
-              />
-            </span>
-          )}
-          {listingTypeFilter !== "all" && (
-            <span
-              className="filter-tag"
-              style={{
-                background: "#f0f0f0",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              Type: {listingTypeFilter === "rent" ? "For Rent" : "For Sale"}
-              <FaTimes
-                onClick={() => setListingTypeFilter("all")}
-                style={{ cursor: "pointer" }}
-              />
-            </span>
-          )}
-          {statusFilter !== "all" && (
-            <span
-              className="filter-tag"
-              style={{
-                background: "#f0f0f0",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              Status: {getStatusDisplay(statusFilter)}
-              <FaTimes
-                onClick={() => setStatusFilter("all")}
-                style={{ cursor: "pointer" }}
-              />
-            </span>
-          )}
-          {searchTerm && (
-            <span
-              className="filter-tag"
-              style={{
-                background: "#f0f0f0",
-                padding: "4px 12px",
-                borderRadius: "20px",
-                fontSize: "12px",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              Search: {searchTerm}
-              <FaTimes
-                onClick={() => {
-                  setSearchTerm("");
-                  setDebouncedSearchTerm("");
-                }}
-                style={{ cursor: "pointer" }}
-              />
-            </span>
-          )}
-        </div>
       </div>
 
-      {/* Table */}
       <div className="table-wrapper">
         {loading ? (
           <div className="loading-state">
@@ -753,10 +987,9 @@ export default function VehicleManagement() {
             <table className="material-table">
               <thead>
                 <tr>
-                  <th>Equipment</th>
-                  <th>Category</th>
-                  <th>Type</th>
-                  <th>Code</th>
+                  <th>Product Name</th>
+                  <th>Listing Type</th>
+                  <th>Type/Model</th>
                   <th>Rate</th>
                   <th>Company</th>
                   <th>Location</th>
@@ -779,31 +1012,42 @@ export default function VehicleManagement() {
                           )}
                           <div>
                             <div className="material-name">{item.name}</div>
+                            {item.brand && (
+                              <div style={{ fontSize: "11px", color: "#666" }}>
+                                {item.brand} {item.model}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
                       <td>
-                        <span
-                          className="category-tag"
-                          style={{
-                            background: "#e0e7ff",
-                            padding: "4px 8px",
-                            borderRadius: "4px",
-                            fontSize: "12px",
-                          }}
-                        >
-                          {item.equipmentCategory?.charAt(0).toUpperCase() +
-                            item.equipmentCategory?.slice(1) || "Equipment"}
+                        <span className="category-tag">
+                          {item.listingCategory?.charAt(0).toUpperCase() +
+                            item.listingCategory?.slice(1) || "Equipment"}
                         </span>
                       </td>
                       <td>
-                        <span className="category-tag">{item.vehicleType}</span>
+                        <div>
+                          {item.vehicleType ||
+                            item.machineType ||
+                            item.equipmentType ||
+                            "N/A"}
+                        </div>
+                        {item.model && (
+                          <div style={{ fontSize: "11px", color: "#666" }}>
+                            {item.model}
+                          </div>
+                        )}
                       </td>
-                      <td>{item.registrationNo}</td>
                       <td>
                         {item.listingType === "rent"
-                          ? `₹${item.dailyRate}/day`
-                          : `₹${item.dailyRate}`}
+                          ? `₹${item.dailyRate.toLocaleString()}/day`
+                          : `₹${item.sellingPrice.toLocaleString()}`}
+                        {item.listingType === "rent" && item.weeklyRate > 0 && (
+                          <div style={{ fontSize: "11px", color: "#666" }}>
+                            Week: ₹{item.weeklyRate.toLocaleString()}
+                          </div>
+                        )}
                       </td>
                       <td>{item.companyName || "N/A"}</td>
                       <td>{item.location || "N/A"}</td>
@@ -828,7 +1072,7 @@ export default function VehicleManagement() {
                         </div>
                         <select
                           onChange={(e) =>
-                            updateVehicleStatus(item.id, e.target.value)
+                            updateListingStatus(item.id, e.target.value)
                           }
                           value={item.status}
                           className="status-select"
@@ -884,11 +1128,9 @@ export default function VehicleManagement() {
                 >
                   Previous
                 </button>
-
                 {[...Array(totalPages)].map((_, i) => (
                   <button
                     key={i}
-                    className={currentPage === i + 1 ? "active" : ""}
                     onClick={() => setCurrentPage(i + 1)}
                     style={{
                       padding: "8px 12px",
@@ -901,7 +1143,6 @@ export default function VehicleManagement() {
                     {i + 1}
                   </button>
                 ))}
-
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
@@ -920,299 +1161,6 @@ export default function VehicleManagement() {
           </>
         )}
       </div>
-
-      {/* Add Modal - Equipment Category Selection */}
-      {showAddModal && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowAddModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content large"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "800px",
-              width: "90%",
-              background: "white",
-              borderRadius: "12px",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px",
-                borderBottom: "1px solid #eee",
-              }}
-            >
-              <h3>
-                <FaPlus /> Add Equipment
-              </h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowAddModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                }}
-              >
-                <FaTimes />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: "20px" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "15px",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Equipment Name *"
-                  value={formData.vehicleName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, vehicleName: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <select
-                  value={formData.equipmentCategory}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      equipmentCategory: e.target.value,
-                    })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="vehicle">Vehicle</option>
-                  <option value="machinery">Machinery</option>
-                  <option value="equipment">Equipment</option>
-                </select>
-                <select
-                  value={formData.categoryId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, categoryId: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Company Name"
-                  value={formData.companyName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyName: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Unique Code"
-                  value={formData.vehicleRC}
-                  onChange={(e) =>
-                    setFormData({ ...formData, vehicleRC: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <select
-                  value={formData.listingType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, listingType: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="rent">For Rent</option>
-                  <option value="sale">For Sale</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Daily Rate *"
-                  value={formData.dailyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dailyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="number"
-                  placeholder="Weekly Rate"
-                  value={formData.weeklyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, weeklyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="number"
-                  placeholder="Monthly Rate"
-                  value={formData.monthlyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, monthlyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={formData.addressLine}
-                  onChange={(e) =>
-                    setFormData({ ...formData, addressLine: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
-                  style={{ gridColumn: "span 2", padding: "10px" }}
-                />
-                <textarea
-                  rows="3"
-                  placeholder="Description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  style={{
-                    gridColumn: "span 2",
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-              </div>
-              {selectedFiles.length > 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "15px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {selectedFiles.map((f, i) => (
-                    <img
-                      key={i}
-                      src={URL.createObjectURL(f)}
-                      alt="Preview"
-                      style={imageStyles.preview}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div
-              className="modal-footer"
-              style={{
-                padding: "20px",
-                borderTop: "1px solid #eee",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <button
-                className="btn-secondary"
-                onClick={() => setShowAddModal(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#6c757d",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-primary"
-                onClick={handleAddVehicle}
-                disabled={uploading}
-                style={{
-                  padding: "8px 16px",
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: uploading ? "not-allowed" : "pointer",
-                  opacity: uploading ? 0.7 : 1,
-                }}
-              >
-                {uploading ? "Adding..." : "Add Equipment"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* View Modal */}
       {showViewModal && selectedItem && (
@@ -1233,10 +1181,10 @@ export default function VehicleManagement() {
           }}
         >
           <div
-            className="modal-content"
+            className="modal-content large"
             onClick={(e) => e.stopPropagation()}
             style={{
-              maxWidth: "700px",
+              maxWidth: "900px",
               width: "90%",
               background: "white",
               borderRadius: "12px",
@@ -1252,6 +1200,10 @@ export default function VehicleManagement() {
                 alignItems: "center",
                 padding: "20px",
                 borderBottom: "1px solid #eee",
+                position: "sticky",
+                top: 0,
+                background: "white",
+                zIndex: 1,
               }}
             >
               <h3>
@@ -1277,147 +1229,154 @@ export default function VehicleManagement() {
                   gap: "20px",
                   marginBottom: "20px",
                   alignItems: "center",
+                  flexWrap: "wrap",
                 }}
               >
                 {selectedItem.photos?.[0] ? (
                   <img
                     src={selectedItem.photos[0]}
                     alt={selectedItem.name}
-                    style={imageStyles.avatar}
+                    style={{
+                      width: "120px",
+                      height: "120px",
+                      objectFit: "cover",
+                      borderRadius: "12px",
+                    }}
                   />
                 ) : (
                   <div
                     style={{
-                      ...imageStyles.avatar,
-                      background: "#e0e0e0",
+                      width: "120px",
+                      height: "120px",
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "32px",
+                      fontSize: "48px",
                       fontWeight: "bold",
+                      borderRadius: "12px",
+                      color: "white",
                     }}
                   >
-                    {selectedItem.name?.charAt(0)}
+                    {selectedItem.name?.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <h2 style={{ margin: 0 }}>{selectedItem.name}</h2>
-                  <p style={{ margin: "5px 0", color: "#666" }}>
-                    ID: {selectedItem.id}
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ margin: 0, color: "#333" }}>
+                    {selectedItem.name}
+                  </h2>
+                  <p style={{ margin: "8px 0", color: "#666" }}>
+                    <strong>ID:</strong> {selectedItem.id}
                   </p>
                   <p style={{ margin: "5px 0", color: "#666" }}>
-                    Code: {selectedItem.registrationNo}
+                    <strong>Code:</strong> {selectedItem.registrationNo}
                   </p>
                   <p style={{ margin: "5px 0", color: "#666" }}>
-                    Company: {selectedItem.companyName || "N/A"}
+                    <strong>Company:</strong>{" "}
+                    {selectedItem.companyName || "N/A"}
                   </p>
+                  {selectedItem.userId?.email && (
+                    <p style={{ margin: "5px 0", color: "#666" }}>
+                      <strong>Listed By:</strong> {selectedItem.userId.email}
+                    </p>
+                  )}
                 </div>
+                <div>{getStatusBadge(selectedItem.status)}</div>
               </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "15px",
-                }}
-              >
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Category
-                  </label>
-                  <p>
-                    {selectedItem.equipmentCategory?.charAt(0).toUpperCase() +
-                      selectedItem.equipmentCategory?.slice(1) || "Equipment"}
-                  </p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Type
-                  </label>
-                  <p>{selectedItem.vehicleType}</p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Listing Type
-                  </label>
-                  <p>
+
+              <div className="details-section">
+                <h4>
+                  <FaInfoCircle /> Basic Information
+                </h4>
+                <div className="details-grid">
+                  <div>
+                    <strong>Category:</strong>{" "}
+                    {selectedItem.listingCategory?.charAt(0).toUpperCase() +
+                      selectedItem.listingCategory?.slice(1)}
+                  </div>
+                  <div>
+                    <strong>Listing Type:</strong>{" "}
                     {selectedItem.listingType === "rent"
                       ? "For Rent"
                       : "For Sale"}
-                  </p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Daily Rate
-                  </label>
-                  <p>₹{selectedItem.dailyRate}/day</p>
-                </div>
-                {selectedItem.listingType === "rent" && (
+                  </div>
                   <div>
-                    <label style={{ fontWeight: "bold", color: "#555" }}>
-                      Weekly/Monthly
-                    </label>
-                    <p>
-                      ₹{selectedItem.weeklyRate}/week | ₹
-                      {selectedItem.monthlyRate}/month
-                    </p>
+                    <strong>Location:</strong> <FaMapMarkerAlt />{" "}
+                    {selectedItem.location || "N/A"}
                   </div>
-                )}
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Location
-                  </label>
-                  <p>
-                    <FaMapMarkerAlt /> {selectedItem.location || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Status
-                  </label>
-                  <p>{getStatusBadge(selectedItem.status)}</p>
-                </div>
-                <div>
-                  <label style={{ fontWeight: "bold", color: "#555" }}>
-                    Created
-                  </label>
-                  <p>
-                    <FaCalendarAlt /> {selectedItem.createdAt}
-                  </p>
-                </div>
-                {selectedItem.description && (
-                  <div style={{ gridColumn: "span 2" }}>
-                    <label style={{ fontWeight: "bold", color: "#555" }}>
-                      Description
-                    </label>
-                    <p>{selectedItem.description}</p>
+                  <div>
+                    <strong>Created:</strong> <FaCalendarAlt />{" "}
+                    {selectedItem.createdAt}
                   </div>
-                )}
-                {selectedItem.photos?.length > 0 && (
-                  <div style={{ gridColumn: "span 2" }}>
-                    <label style={{ fontWeight: "bold", color: "#555" }}>
-                      Gallery
-                    </label>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "10px",
-                        flexWrap: "wrap",
-                        marginTop: "10px",
-                      }}
-                    >
-                      {selectedItem.photos.map((p, i) => (
-                        <img
-                          key={i}
-                          src={p}
-                          alt="Gallery"
-                          style={imageStyles.gallery}
-                          onClick={() => window.open(p)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
+
+              <div className="details-section">
+                <h4>💰 Pricing Details</h4>
+                <div className="details-grid">
+                  {selectedItem.listingType === "rent" ? (
+                    <>
+                      <div>
+                        <strong>Daily Rate:</strong> ₹
+                        {selectedItem.dailyRate?.toLocaleString()}/day
+                      </div>
+                      {selectedItem.weeklyRate > 0 && (
+                        <div>
+                          <strong>Weekly Rate:</strong> ₹
+                          {selectedItem.weeklyRate?.toLocaleString()}/week
+                        </div>
+                      )}
+                      {selectedItem.monthlyRate > 0 && (
+                        <div>
+                          <strong>Monthly Rate:</strong> ₹
+                          {selectedItem.monthlyRate?.toLocaleString()}/month
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div>
+                      <strong>Selling Price:</strong> ₹
+                      {selectedItem.sellingPrice?.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {selectedItem.description && (
+                <div className="details-section">
+                  <h4>Description</h4>
+                  <p style={{ lineHeight: "1.6", color: "#555" }}>
+                    {selectedItem.description}
+                  </p>
+                </div>
+              )}
+
+              {renderCategoryDetails(selectedItem)}
+
+              {selectedItem.photos?.length > 0 && (
+                <div className="details-section">
+                  <h4>Image Gallery</h4>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "10px",
+                      flexWrap: "wrap",
+                      marginTop: "10px",
+                    }}
+                  >
+                    {selectedItem.photos.map((p, i) => (
+                      <img
+                        key={i}
+                        src={p}
+                        alt={`Gallery ${i + 1}`}
+                        style={imageStyles.gallery}
+                        onClick={() => window.open(p)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <div
               className="modal-footer"
@@ -1449,436 +1408,58 @@ export default function VehicleManagement() {
       )}
 
       {/* Edit Modal */}
-      {showEditModal && selectedItem && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowEditModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content large"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "800px",
-              width: "90%",
-              background: "white",
-              borderRadius: "12px",
-              maxHeight: "90vh",
-              overflow: "auto",
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px",
-                borderBottom: "1px solid #eee",
-              }}
-            >
-              <h3>
-                <FaEdit /> Edit Equipment
-              </h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowEditModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                }}
-              >
-                <FaTimes />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: "20px" }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
-                  gap: "15px",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Equipment Name *"
-                  value={formData.vehicleName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, vehicleName: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <select
-                  value={formData.equipmentCategory}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      equipmentCategory: e.target.value,
-                    })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="vehicle">Vehicle</option>
-                  <option value="machinery">Machinery</option>
-                  <option value="equipment">Equipment</option>
-                </select>
-                <select
-                  value={formData.categoryId}
-                  onChange={(e) =>
-                    setFormData({ ...formData, categoryId: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="">Select Category</option>
-                  {categories.map((cat) => (
-                    <option key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  placeholder="Company Name"
-                  value={formData.companyName}
-                  onChange={(e) =>
-                    setFormData({ ...formData, companyName: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Unique Code"
-                  value={formData.vehicleRC}
-                  onChange={(e) =>
-                    setFormData({ ...formData, vehicleRC: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <select
-                  value={formData.listingType}
-                  onChange={(e) =>
-                    setFormData({ ...formData, listingType: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <option value="rent">For Rent</option>
-                  <option value="sale">For Sale</option>
-                </select>
-                <select
-                  value={formData.status}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                >
-                  {vehicleStatuses.map((s) => (
-                    <option key={s} value={s}>
-                      {getStatusDisplay(s)}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  placeholder="Daily Rate *"
-                  value={formData.dailyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, dailyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="number"
-                  placeholder="Weekly Rate"
-                  value={formData.weeklyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, weeklyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="number"
-                  placeholder="Monthly Rate"
-                  value={formData.monthlyRate}
-                  onChange={(e) =>
-                    setFormData({ ...formData, monthlyRate: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="text"
-                  placeholder="Address"
-                  value={formData.addressLine}
-                  onChange={(e) =>
-                    setFormData({ ...formData, addressLine: e.target.value })
-                  }
-                  style={{
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => setSelectedFiles(Array.from(e.target.files))}
-                  style={{ gridColumn: "span 2", padding: "10px" }}
-                />
-                <textarea
-                  rows="3"
-                  placeholder="Description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  style={{
-                    gridColumn: "span 2",
-                    padding: "10px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                  }}
-                />
-              </div>
-              {selectedFiles.length > 0 && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "15px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {selectedFiles.map((f, i) => (
-                    <img
-                      key={i}
-                      src={URL.createObjectURL(f)}
-                      alt="Preview"
-                      style={imageStyles.preview}
-                    />
-                  ))}
-                </div>
-              )}
-              {formData.photos?.length > 0 && !selectedFiles.length && (
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "10px",
-                    marginTop: "15px",
-                    flexWrap: "wrap",
-                  }}
-                >
-                  {formData.photos.map((p, i) => (
-                    <img
-                      key={i}
-                      src={p}
-                      alt="Current"
-                      style={imageStyles.preview}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-            <div
-              className="modal-footer"
-              style={{
-                padding: "20px",
-                borderTop: "1px solid #eee",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <button
-                className="btn-secondary"
-                onClick={() => setShowEditModal(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#6c757d",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-primary"
-                onClick={handleEditVehicle}
-                disabled={uploading}
-                style={{
-                  padding: "8px 16px",
-                  background:
-                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: uploading ? "not-allowed" : "pointer",
-                  opacity: uploading ? 0.7 : 1,
-                }}
-              >
-                {uploading ? "Updating..." : "Update Equipment"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && itemToDelete && (
-        <div
-          className="modal-overlay"
-          onClick={() => setShowDeleteModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: "400px",
-              width: "90%",
-              background: "white",
-              borderRadius: "12px",
-            }}
-          >
-            <div
-              className="modal-header"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px",
-                borderBottom: "1px solid #eee",
-              }}
-            >
-              <h3>
-                <FaTrash /> Delete Equipment
-              </h3>
-              <button
-                className="close-btn"
-                onClick={() => setShowDeleteModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                }}
-              >
-                <FaTimes />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: "20px" }}>
-              <p>Are you sure you want to delete "{itemToDelete.name}"?</p>
-              <p style={{ color: "#dc3545", fontSize: "14px" }}>
-                This action cannot be undone.
-              </p>
-            </div>
-            <div
-              className="modal-footer"
-              style={{
-                padding: "20px",
-                borderTop: "1px solid #eee",
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
-            >
-              <button
-                className="btn-secondary"
-                onClick={() => setShowDeleteModal(false)}
-                style={{
-                  padding: "8px 16px",
-                  background: "#6c757d",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn-danger"
-                onClick={handleDeleteVehicle}
-                style={{
-                  padding: "8px 16px",
-                  background: "#dc3545",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  cursor: "pointer",
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <style>{`
+        .details-section {
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #eee;
+        }
+        .details-section h4 {
+          margin: 0 0 12px 0;
+          color: #333;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .details-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 12px;
+        }
+        .details-grid div {
+          padding: 8px;
+          background: #f8f9fa;
+          border-radius: 6px;
+        }
+        .features-list {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+        }
+        .feature-tag {
+          padding: 4px 12px;
+          background: #e8f5e9;
+          border-radius: 20px;
+          font-size: 12px;
+          color: #2e7d32;
+        }
+        .category-tag {
+          background: #e0e7ff;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+        }
+        .clear-filters-btn {
+          background: none;
+          border: none;
+          color: #dc3545;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+      `}</style>
     </div>
   );
 }
