@@ -17,6 +17,7 @@ import StaticContent from "./pages/StaticContent/StaticContent.jsx";
 import Faq from "./pages/Faq/Faq.jsx";
 import Requirements from "./pages/Requirements/Requirements.jsx";
 import OrderManagement from "./pages/Orders/OrderManagement.jsx";
+import PaymentFailedPage from "./pages/Payment/PaymentFailedPage.jsx";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/order-management" element={<OrderManagement />} />
           </Route>
         </Route>
+        <Route path="/payment-failed" element={<PaymentFailedPage />} />
       </Routes>
     </BrowserRouter>
   );
