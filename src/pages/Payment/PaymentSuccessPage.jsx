@@ -27,7 +27,7 @@ const PaymentSuccessPage = () => {
             Your payment was completed successfully
           </Typography>
 
-          <Typography variant="body1" className="payment-success-description">
+          <Typography variant="body1" className="payments-success-description">
             Thank you for your payment. A confirmation email has been sent to
             your registered email address.
           </Typography>

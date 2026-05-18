@@ -79,14 +79,11 @@
   animation: fadeIn 0.5s ease-out 0.4s both;
 }
 
-.payment-success-description {
-  color: #666 !important;
-  margin-bottom: 32px !important;
-  max-width: 450px;
-  margin-left: auto;
-  margin-right: auto;
-  line-height: 1.6 !important;
-  animation: fadeIn 0.5s ease-out 0.5s both;
+.payments-success-description {
+  color: #666;
+  font-size: 16px !important;
+  line-height: 28px !important;
+  margin-bottom: 30px !important;
 }
 
 @keyframes fadeIn {
