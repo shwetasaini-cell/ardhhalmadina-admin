@@ -22,12 +22,14 @@ import PaymentSuccessPage from "./pages/Payment/PaymentSuccessPage.jsx";
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
         {/* PUBLIC */}
         <Route path="/" element={<Login />} />
+        <Route path="/payment-failed" element={<PaymentFailedPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
 
         {/* PROTECTED */}
         <Route element={<ProtectedRoute />}>
@@ -50,9 +52,7 @@ export default function App() {
             <Route path="/order-management" element={<OrderManagement />} />
           </Route>
         </Route>
-        <Route path="/payment-failed" element={<PaymentFailedPage />} />
-        <Route path="/payment-success" element={<PaymentSuccessPage />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
