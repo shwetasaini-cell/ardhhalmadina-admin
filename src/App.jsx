@@ -18,6 +18,7 @@ import Faq from "./pages/Faq/Faq.jsx";
 import Requirements from "./pages/Requirements/Requirements.jsx";
 import OrderManagement from "./pages/Orders/OrderManagement.jsx";
 import PaymentFailedPage from "./pages/Payment/PaymentFailedPage.jsx";
+import PaymentSuccessPage from "./pages/Payment/PaymentSuccessPage.jsx";
 
 export default function App() {
   return (
@@ -50,6 +51,7 @@ export default function App() {
           </Route>
         </Route>
         <Route path="/payment-failed" element={<PaymentFailedPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
       </Routes>
     </HashRouter>
   );
