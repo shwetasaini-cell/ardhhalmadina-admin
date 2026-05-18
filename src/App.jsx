@@ -1,6 +1,6 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, HashRouter } from "react-router-dom";
 
 import Login from "./pages/Login/Login";
 import Dashboard from "./pages/Dashboard/Dashboard";
@@ -21,7 +21,7 @@ import PaymentFailedPage from "./pages/Payment/PaymentFailedPage.jsx";
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <ToastContainer position="top-right" autoClose={3000} />
 
       <Routes>
@@ -51,6 +51,6 @@ export default function App() {
         </Route>
         <Route path="/payment-failed" element={<PaymentFailedPage />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
